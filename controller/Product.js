@@ -33,8 +33,13 @@ exports.createProduct = async (req, res) => {
 exports.fetchAllProducts = async (req, res) => {
   //TODO: we have to try with multiple categories and brands
   //TODO: to get sorting using discountedPrice
-  let query = Product.find({});
-  let totalProductsQuery = Product.find({}); //another method without using .clone()
+  // let query = Product.find({}); 
+  let condition ={  }
+  if(!req.query.admin){
+    condition.deleted = {$ne:true}
+  }
+  let query = Product.find(condition);   //ne means not equal to 
+  let totalProductsQuery = Product.find(condition); //another method without using .clone()
 
   if (req.query.category) {
     query = query.find({ category: req.query.category });
@@ -95,6 +100,9 @@ exports.fetchProductsById = async (req, res) => {
   const { id } = req.params;
   try {
     const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
     res.status(200).json(product);
   } catch (err) {
     res.status(400).json(err);
