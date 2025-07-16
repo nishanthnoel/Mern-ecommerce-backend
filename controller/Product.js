@@ -97,6 +97,7 @@ exports.fetchAllProducts = async (req, res) => {
 //   .exec();
 
 exports.fetchProductsById = async (req, res) => {
+  // const { id } = req.user;
   const { id } = req.params;
   try {
     const product = await Product.findById(id);

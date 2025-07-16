@@ -2,9 +2,10 @@ const { Cart } = require("../model/Cart");
 
 exports.fetchCartByUser = async (req, res) => {
   // const {id} =  req.body.params
-  const { user } = req.query;
+  // const { user } = req.query; // we can get the req.user using token in the backend no need give it in the front end.  
+  const { id } = req.user;// this takes the user from req.user thatr the rtoken 
   try {
-    const cartItems = await Cart.find({ user: user })
+    const cartItems = await Cart.find({ user: id })
       .populate("user")
       .populate("product");
     res.status(200).json(cartItems);
@@ -14,7 +15,9 @@ exports.fetchCartByUser = async (req, res) => {
 };
 
 exports.addToCart = async (req, res) => {
-  const cart = new Cart(req.body);
+  //we are not sending user id from the front wend rather we are getting  id from backend user
+  const {id} = req.user
+  const cart = new Cart({...req.body, user:id});
   try {
     const doc = await cart.save();
     // console.log("thedoc",doc)

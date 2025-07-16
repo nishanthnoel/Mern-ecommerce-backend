@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const JwtStrategy = require("passport-jwt").Strategy;
 const ExtractJwt = require("passport-jwt").ExtractJwt;
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser") //for cookies from client side
 
 const { createProduct } = require("./controller/Product");
 const productsRouters = require("./routes/Products");
@@ -19,16 +20,26 @@ const authRouter = require("./routes/Auth");
 const cartRouter = require("./routes/Cart");
 const ordersRouter = require("./routes/Order");
 const { User } = require("./model/User");
-const { isAuth, sanitizeUser } = require("./services/common");
+const { isAuth, sanitizeUser, cookieExtractor } = require("./services/common");
+const path = require("path");
 
 const SECRET_KEY = "SECRET_KEY";
 
 //JWT options
-var opts = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+const opts = {};
+// opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken(); without cookies
+opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY;
 
 //middlewares
+server.use(cors({
+  origin: "http://localhost:3000", // your React app's URL
+  credentials: true,               // allow cookies to be sent
+  exposedHeaders: ["X-Total-Count"]
+}));//To protect users. Without it, any website could secretly make requests to any other site where you're logged in — that would be a security risk.
+// server.use(express.static (path.join(__dirname, "build")))
+// server.use(express.static( "build"))
+server.use(cookieParser())  //TO EXTRACT THE COOKIES FROM REQ.COOKIES
 server.use(
   session({
     secret: "your_secret_key", // use an env variable in production
@@ -37,7 +48,6 @@ server.use(
   })
 );
 server.use(passport.authenticate("session"));
-server.use(cors({ exposedHeaders: ["X-Total-Count"] })); //To protect users. Without it, any website could secretly make requests to any other site where you're logged in — that would be a security risk.
 server.use(express.json()); //to parse req.body
 // server.use("/products", isAuth, productsRouters.router); //we can use jwt toke for client auth only
 server.use("/products", isAuth(), productsRouters.router);
@@ -51,10 +61,17 @@ server.use("/orders", isAuth(), ordersRouter.router);
 // Passport Local Strategy
 passport.use(
   "local",
-  new LocalStrategy(async function (username, password, done) {
+  new LocalStrategy({usernameField: "email"}, async function (
+    // usernameField has been added as email.
+    // username, // we pass email at all the places
+    email,
+    password,
+    done
+  ) {
     {
       try {
-        const user = await User.findOne({ email: username }).exec();
+        // const user = await User.findOne({ email: username }).exec();
+        const user = await User.findOne({ email: email }).exec();
         if (!user) {
           done(null, false, { message: "no such user email" });
           // return res.status(401).json({ message: "no such user email" });
@@ -66,18 +83,21 @@ passport.use(
           32,
           "sha256",
           async (err, hashedPassword) => {
+            if (err) {
+              return done(err);
+            }
             if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
-              done(null, false, { message: "invalid credentials" });
+              return done(null, false, { message: "invalid credentials" });
             } else {
               //creating a token
               const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
               // done(null, sanitizeUser(user)); // this line sends to serialize //old code
-              // done(null, token);
+              return done(null, {token});
             }
           }
         );
       } catch (err) {
-        done(err);
+        return done(err);
       }
     }
   })
@@ -89,7 +109,7 @@ passport.use(
     console.log(jwt_payload);
 
     try {
-      const user = await User.findOne({ id: jwt_payload.sub });
+      const user = await User.findById( jwt_payload.id); //this is also a important part
       if (user) {
         return done(null, sanitizeUser(user)); //this calls serializer
       } else {
@@ -130,9 +150,9 @@ async function main() {
 //     res.json({status:"success"})
 // })
 
-server.get("/", (req, res) => {
-  res.json({ status: "success" });
-});
+// server.get("/", (req, res) => {
+//   res.json({ status: "success" });
+// });
 
 // server.post("/products", createProduct); // this routing is done in routes/Products.js
 
