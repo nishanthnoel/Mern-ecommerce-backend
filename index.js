@@ -9,7 +9,7 @@ const crypto = require("crypto");
 const JwtStrategy = require("passport-jwt").Strategy;
 const ExtractJwt = require("passport-jwt").ExtractJwt;
 const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser") //for cookies from client side
+const cookieParser = require("cookie-parser"); //for cookies from client side
 
 const { createProduct } = require("./controller/Product");
 const productsRouters = require("./routes/Products");
@@ -32,14 +32,16 @@ opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY;
 
 //middlewares
-server.use(cors({
-  origin: "http://localhost:3000", // your React app's URL
-  credentials: true,               // allow cookies to be sent
-  exposedHeaders: ["X-Total-Count"]
-}));//To protect users. Without it, any website could secretly make requests to any other site where you're logged in — that would be a security risk.
+server.use(
+  cors({
+    origin: "http://localhost:3000", // your React app's URL
+    credentials: true, // allow cookies to be sent
+    exposedHeaders: ["X-Total-Count"],
+  })
+); //To protect users. Without it, any website could secretly make requests to any other site where you're logged in — that would be a security risk.
 // server.use(express.static (path.join(__dirname, "build")))
 // server.use(express.static( "build"))
-server.use(cookieParser())  //TO EXTRACT THE COOKIES FROM REQ.COOKIES
+server.use(cookieParser()); //TO EXTRACT THE COOKIES FROM REQ.COOKIES
 server.use(
   session({
     secret: "your_secret_key", // use an env variable in production
@@ -61,7 +63,7 @@ server.use("/orders", isAuth(), ordersRouter.router);
 // Passport Local Strategy
 passport.use(
   "local",
-  new LocalStrategy({usernameField: "email"}, async function (
+  new LocalStrategy({ usernameField: "email" }, async function (
     // usernameField has been added as email.
     // username, // we pass email at all the places
     email,
@@ -91,8 +93,11 @@ passport.use(
             } else {
               //creating a token
               const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-              // done(null, sanitizeUser(user)); // this line sends to serialize //old code
-              return done(null, {token});
+              // done(null, sanitizeUser(user));  
+              console.log("localstrargy", token); 
+              // return done(null, { token });//old code  // this line sends to serialize
+              // return done(null, { id: user.id, role: user.role }); // this throws an error, because it serializes 
+              return done(null, { id: user.id, role: user.role, token }); // this works, because we are sending token // this is req.user
             }
           }
         );
@@ -106,10 +111,10 @@ passport.use(
 passport.use(
   "jwt",
   new JwtStrategy(opts, async function (jwt_payload, done) {
-    console.log(jwt_payload);
+    // console.log(jwt_payload);
 
     try {
-      const user = await User.findById( jwt_payload.id); //this is also a important part
+      const user = await User.findById(jwt_payload.id); //this is also a important part
       if (user) {
         return done(null, sanitizeUser(user)); //this calls serializer
       } else {

@@ -63,7 +63,7 @@ exports.fetchAllProducts = async (req, res) => {
   // const totalDocs = await query.clone().countDocuments().exec(); //with clone
   const totalDocs = await totalProductsQuery.countDocuments().exec(); //another method without using .clone()
   // const totalDocs = await query.count().exec(); //.count() is deprecated in newer Mongoose versions in favor of
-  console.log({ totalDocs });
+  // console.log({ totalDocs });
 
   if (req.query._page && req.query._limit) {
     // const pageSize = req.query._limit
@@ -76,7 +76,7 @@ exports.fetchAllProducts = async (req, res) => {
     const docs = await query.exec();
     res.set("X-Total-Count", totalDocs); //this setting of the header is then used in front end for totalItems
     res.status(200).json(docs); // whe virtuals used this doc to the frontend goes without _
-    console.log(docs); // when virtuals used it logs with _
+    // console.log(docs); // when virtuals used it logs with _
   } catch (err) {
     res.status(400).json(err);
     console.log(err);

@@ -26,13 +26,14 @@ exports.createUser = async (req, res) => {
           salt: salt,
         });
 
-        const doc = await user.save();
+        const doc = await user.save(); // creates a user in the DB
         req.login(sanitizeUser(doc), (err) => {
           // this also calls a serializer and calls a session
           if (err) {
             res.status(400).json(err);
           } else {
             const token = jwt.sign(sanitizeUser(doc), SECRET_KEY);
+            console.log("create userlogin", token);
             res
               .cookie("jwt", token, {
                 expires: new Date(Date.now() + 3600000),
@@ -40,7 +41,8 @@ exports.createUser = async (req, res) => {
                 sameSite: "None",
               })
               .status(201)
-              .json(token);
+              // .json(token);//old code
+              .json({ id: doc.id, role: doc.role });
           }
         });
       }
@@ -52,6 +54,8 @@ exports.createUser = async (req, res) => {
 };
 exports.loginUser = async (req, res) => {
   // res.json(req.user); //commented becaose we send token by cookie
+  console.log("login", req.user.token);
+
   res
     .cookie("jwt", req.user.token, {
       expires: new Date(Date.now() + 3600000),
@@ -60,7 +64,8 @@ exports.loginUser = async (req, res) => {
       httpOnly: true,
     })
     .status(201)
-    .json(req.user.token);
+    // .json(req.user.token);//old code
+    .json({ id: req.user.id, role: req.user.role }); // sending user id and role is actually helping in logging in
 
   // res.json({status:"success"});
 
@@ -91,6 +96,13 @@ exports.loginUser = async (req, res) => {
   //   console.log("not happening", err);
   // }
 };
-exports.checkUser = async (req, res) => {
-  res.json({ status: "success", user: req.user });
+// exports.checkUser = async (req, res) => {
+//   res.json({ status: "success", user: req.user });
+// };
+exports.checkAuth = async (req, res) => {
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.sendStatus(401);
+  }
 };
