@@ -164,3 +164,22 @@
 //     console.log("✅ Server started on http://localhost:8080");
 //   });
 // }
+
+
+
+// **********************************
+// {
+//   "builds": [
+//     {
+//       "src": "index.js",
+//       "use": "@vercel/node"
+//     },
+//     {
+//       "src": "build/**",
+//       "use": "@vercel/static"
+//     }
+//   ],
+
+//   "rewrites": [{ "source": "/(.*)", "destination": "index.js" }]
+// }
+

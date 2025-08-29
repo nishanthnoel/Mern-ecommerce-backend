@@ -188,6 +188,7 @@ server.use(
   })
 ); //To protect users. Without it, any website could secretly make requests to any other site where you're logged in — that would be a security risk.
 
+server.use(express.static (path.resolve(__dirname, "build")))
 // server.use(express.static (path.join(__dirname, "build")))
 // server.use(express.static( "build"))
 server.use(cookieParser()); //TO EXTRACT THE COOKIES FROM REQ.COOKIES
